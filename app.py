@@ -9,40 +9,39 @@ from io import BytesIO
 st.set_page_config(page_title="Dashboard Café Latte", layout="wide")
 
 st.title("📊 Dashboard Café Latte (Tiempo Real)")
-
 # ==============================
-# LOGIN
-# ==============================
-# ==============================
-# LOGIN CORRECTO (VERSION NUEVA)
+# LOGIN ESTABLE (SIN DUPLICADOS)
 # ==============================
 
 import streamlit as st
 import streamlit_authenticator as stauth
 
-# Credenciales
-credentials = {
-    "usernames": {
-        "admin": {
-            "name": "Admin",
-            "password": "1234"
+# ✅ SOLO CREAR UNA VEZ (uso de session_state)
+if "authenticator" not in st.session_state:
+
+    credentials = {
+        "usernames": {
+            "admin": {
+                "name": "Admin",
+                "password": "1234"
+            }
         }
     }
-}
 
-# Crear autenticador
-authenticator = stauth.Authenticate(
-    credentials,
-    "dashboard_cookie",
-    "clave_secreta",
-    cookie_expiry_days=1,
-    auto_hash=True
-)
+    st.session_state["authenticator"] = stauth.Authenticate(
+        credentials,
+        "dashboard_cookie",
+        "clave_secreta",
+        cookie_expiry_days=1,
+        auto_hash=True
+    )
 
-# ✅ NUEVA FORMA DE LOGIN
+authenticator = st.session_state["authenticator"]
+
+# ✅ LOGIN (solo una vez)
 authenticator.login()
 
-# ✅ OBTENER ESTADO DESDE session_state
+# ✅ VALIDACIONES
 if st.session_state.get("authentication_status") is False:
     st.error("❌ Usuario o contraseña incorrectos")
     st.stop()
@@ -51,49 +50,8 @@ if st.session_state.get("authentication_status") is None:
     st.warning("⚠️ Ingrese sus credenciales")
     st.stop()
 
-# ✅ Usuario autenticado
+# ✅ LOGIN OK
 st.success(f"✅ Bienvenido {st.session_state.get('name')}")
-# ==============================
-# LOGIN (VERSIÓN SIN ERROR)
-# ==============================
-
-import streamlit as st
-import streamlit_authenticator as stauth
-
-# Credenciales (sin hash manual)
-credentials = {
-    "usernames": {
-        "admin": {
-            "name": "Admin",
-            "password": "1234"
-        }
-    }
-}
-
-# ✅ Usamos auto_hash=True (clave)
-authenticator = stauth.Authenticate(
-    credentials,
-    "dashboard_cookie",
-    "clave_secreta",
-    cookie_expiry_days=1,
-    auto_hash=True   # 🔥 ESTA ES LA SOLUCION
-)
-
-# Login UI
-name, auth_status, username = authenticator.login("🔐 Login", "main")
-
-# Validación
-if auth_status is False:
-    st.error("❌ Usuario o contraseña incorrectos")
-    st.stop()
-
-if auth_status is None:
-    st.warning("⚠️ Ingrese sus credenciales")
-    st.stop()
-
-# Login exitoso
-st.success(f"✅ Bienvenido {name}")
-
 # ==============================
 # ✅ CONEXION A SHAREPOINT
 # ==============================
