@@ -13,19 +13,44 @@ st.title("📊 Dashboard Café Latte (Tiempo Real)")
 # ==============================
 # LOGIN
 # ==============================
+
 import streamlit_authenticator as stauth
 
-names = ["Admin"]
-usernames = ["admin"]
-passwords = ["1234"]
+# 🔐 Generar password en HASH (importante para evitar errores)
+hashed_passwords = stauth.Hasher(["1234"]).generate()
 
+# Credenciales en formato correcto
+credentials = {
+    "usernames": {
+        "admin": {
+            "name": "Admin",
+            "password": hashed_passwords[0]
+        }
+    }
+}
+
+# Crear autenticador
 authenticator = stauth.Authenticate(
-    names,
-    usernames,
-    passwords,
-    "dashboard",
-    "clave_secreta"
+    credentials,
+    "dashboard_cookie",
+    "clave_secreta",
+    cookie_expiry_days=1
 )
+
+# Mostrar login
+name, auth_status, username = authenticator.login("🔐 Login", "main")
+
+# Validaciones
+if auth_status is False:
+    st.error("❌ Usuario o contraseña incorrectos")
+    st.stop()
+
+if auth_status is None:
+    st.warning("⚠️ Ingrese sus credenciales")
+    st.stop()
+
+# Si login OK
+st.success(f"✅ Bienvenido {name}")
 
 name, auth_status, username = authenticator.login("Login", "main")
 
