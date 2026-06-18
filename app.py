@@ -13,7 +13,46 @@ st.title("📊 Dashboard Café Latte (Tiempo Real)")
 # ==============================
 # LOGIN
 # ==============================
+# ==============================
+# LOGIN CORRECTO (VERSION NUEVA)
+# ==============================
 
+import streamlit as st
+import streamlit_authenticator as stauth
+
+# Credenciales
+credentials = {
+    "usernames": {
+        "admin": {
+            "name": "Admin",
+            "password": "1234"
+        }
+    }
+}
+
+# Crear autenticador
+authenticator = stauth.Authenticate(
+    credentials,
+    "dashboard_cookie",
+    "clave_secreta",
+    cookie_expiry_days=1,
+    auto_hash=True
+)
+
+# ✅ NUEVA FORMA DE LOGIN
+authenticator.login()
+
+# ✅ OBTENER ESTADO DESDE session_state
+if st.session_state.get("authentication_status") is False:
+    st.error("❌ Usuario o contraseña incorrectos")
+    st.stop()
+
+if st.session_state.get("authentication_status") is None:
+    st.warning("⚠️ Ingrese sus credenciales")
+    st.stop()
+
+# ✅ Usuario autenticado
+st.success(f"✅ Bienvenido {st.session_state.get('name')}")
 # ==============================
 # LOGIN (VERSIÓN SIN ERROR)
 # ==============================
