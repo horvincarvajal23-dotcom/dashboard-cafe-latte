@@ -14,33 +14,36 @@ st.title("📊 Dashboard Café Latte (Tiempo Real)")
 # LOGIN
 # ==============================
 
+# ==============================
+# LOGIN (VERSIÓN SIN ERROR)
+# ==============================
+
+import streamlit as st
 import streamlit_authenticator as stauth
 
-# 🔐 Generar password en HASH (importante para evitar errores)
-hashed_passwords = stauth.Hasher(["1234"]).generate()
-
-# Credenciales en formato correcto
+# Credenciales (sin hash manual)
 credentials = {
     "usernames": {
         "admin": {
             "name": "Admin",
-            "password": hashed_passwords[0]
+            "password": "1234"
         }
     }
 }
 
-# Crear autenticador
+# ✅ Usamos auto_hash=True (clave)
 authenticator = stauth.Authenticate(
     credentials,
     "dashboard_cookie",
     "clave_secreta",
-    cookie_expiry_days=1
+    cookie_expiry_days=1,
+    auto_hash=True   # 🔥 ESTA ES LA SOLUCION
 )
 
-# Mostrar login
+# Login UI
 name, auth_status, username = authenticator.login("🔐 Login", "main")
 
-# Validaciones
+# Validación
 if auth_status is False:
     st.error("❌ Usuario o contraseña incorrectos")
     st.stop()
@@ -49,13 +52,8 @@ if auth_status is None:
     st.warning("⚠️ Ingrese sus credenciales")
     st.stop()
 
-# Si login OK
+# Login exitoso
 st.success(f"✅ Bienvenido {name}")
-
-name, auth_status, username = authenticator.login("Login", "main")
-
-if not auth_status:
-    st.stop()
 
 # ==============================
 # ✅ CONEXION A SHAREPOINT
