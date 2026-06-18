@@ -55,7 +55,7 @@ st.success(f"✅ Bienvenido {st.session_state.get('name')}")
 @st.cache_data(ttl=30)
 def load_data():
     try:
-        url = "PEGA_AQUI_TU_LINK_DE_DESCARGA.xlsx"  # ⚠️ CAMBIA ESTO
+        url = "https://supercentrohn-my.sharepoint.com/:x:/g/personal/hmartinez_centro_hn/IQCVqyoZtIpJTZ2pyvHhhHSYAbgX98ZQN8_SvSyT2LxqfZo?e=DPgqDY"  # ⚠️ CAMBIA ESTO
 
         headers = {
             "User-Agent": "Mozilla/5.0"
