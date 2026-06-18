@@ -76,30 +76,51 @@ def load_data():
 df = load_data()
 
 # ==============================
-# LIMPIEZA
+# LIMPIEZA ROBUSTA (AUTO DETECTA)
 # ==============================
 
-# ✅ CREAR COLUMNA VENTAS (CLAVE)
-if "INGRESE EL TOTAL DE LA VENTA" in df.columns:
-    df["Ventas"] = pd.to_numeric(
-        df["INGRESE EL TOTAL DE LA VENTA"],
-        errors="coerce"
-    )
-else:
-    st.error("❌ No se encontró la columna de ventas en el Excel")
+# ✅ limpiar nombres de columnas
+df.columns = df.columns.str.strip()
+
+# DEBUG (muy importante)
+st.write("Columnas detectadas:", df.columns)
+
+# ✅ buscar columna de ventas automáticamente
+col_ventas = None
+
+for col in df.columns:
+    if "VENTA" in col.upper():
+        col_ventas = col
+        break
+
+if col_ventas is None:
+    st.error("❌ No se encontró ninguna columna de ventas")
     st.stop()
 
-# ✅ FORMATEAR FECHA
-if "FECHA" in df.columns:
-    df["Fecha"] = pd.to_datetime(df["FECHA"], errors="coerce")
-else:
-    st.warning("⚠️ No hay columna FECHA")
+# ✅ crear columna Ventas
+df["Ventas"] = pd.to_numeric(df[col_ventas], errors="coerce")
 
-# ✅ VENDEDORA
-if "VENDEDORA" in df.columns:
-    df["Vendedora"] = df["VENDEDORA"]
+# ✅ manejar FECHA
+col_fecha = None
+for col in df.columns:
+    if "FECHA" in col.upper():
+        col_fecha = col
+        break
 
-# ✅ ELIMINAR NULOS
+if col_fecha:
+    df["Fecha"] = pd.to_datetime(df[col_fecha], errors="coerce")
+
+# ✅ manejar VENDEDORA
+col_vendedora = None
+for col in df.columns:
+    if "VENDEDORA" in col.upper():
+        col_vendedora = col
+        break
+
+if col_vendedora:
+    df["Vendedora"] = df[col_vendedora]
+
+# ✅ limpiar datos inválidos
 df = df.dropna(subset=["Ventas"])
 # ==============================
 # FILTROS
