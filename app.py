@@ -79,21 +79,28 @@ df = load_data()
 # LIMPIEZA
 # ==============================
 
+# ✅ CREAR COLUMNA VENTAS (CLAVE)
 if "INGRESE EL TOTAL DE LA VENTA" in df.columns:
     df["Ventas"] = pd.to_numeric(
         df["INGRESE EL TOTAL DE LA VENTA"],
         errors="coerce"
     )
+else:
+    st.error("❌ No se encontró la columna de ventas en el Excel")
+    st.stop()
 
+# ✅ FORMATEAR FECHA
 if "FECHA" in df.columns:
     df["Fecha"] = pd.to_datetime(df["FECHA"], errors="coerce")
+else:
+    st.warning("⚠️ No hay columna FECHA")
 
+# ✅ VENDEDORA
 if "VENDEDORA" in df.columns:
     df["Vendedora"] = df["VENDEDORA"]
 
-# eliminar nulos
+# ✅ ELIMINAR NULOS
 df = df.dropna(subset=["Ventas"])
-
 # ==============================
 # FILTROS
 # ==============================
