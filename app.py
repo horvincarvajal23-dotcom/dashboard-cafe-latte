@@ -2,21 +2,19 @@ import streamlit as st
 import pandas as pd
 import requests
 from io import BytesIO
+import time
 
 # ==============================
 # CONFIG
 # ==============================
 st.set_page_config(page_title="Dashboard Café Latte", layout="wide")
-
 st.title("📊 Dashboard Café Latte (Tiempo Real)")
-# ==============================
-# LOGIN ESTABLE (SIN DUPLICADOS)
-# ==============================
 
-import streamlit as st
+# ==============================
+# LOGIN ESTABLE
+# ==============================
 import streamlit_authenticator as stauth
 
-# ✅ SOLO CREAR UNA VEZ (uso de session_state)
 if "authenticator" not in st.session_state:
 
     credentials = {
@@ -38,10 +36,8 @@ if "authenticator" not in st.session_state:
 
 authenticator = st.session_state["authenticator"]
 
-# ✅ LOGIN (solo una vez)
 authenticator.login()
 
-# ✅ VALIDACIONES
 if st.session_state.get("authentication_status") is False:
     st.error("❌ Usuario o contraseña incorrectos")
     st.stop()
@@ -50,60 +46,74 @@ if st.session_state.get("authentication_status") is None:
     st.warning("⚠️ Ingrese sus credenciales")
     st.stop()
 
-# ✅ LOGIN OK
 st.success(f"✅ Bienvenido {st.session_state.get('name')}")
+
 # ==============================
-# ✅ CONEXION A SHAREPOINT
+# CARGA DE DATOS DESDE SHAREPOINT
 # ==============================
 
 @st.cache_data(ttl=30)
 def load_data():
-
     try:
-        url = "PEGA_AQUI_TU_LINK_DIRECTO"  # 👈 IMPORTANTE
+        url = "PEGA_AQUI_TU_LINK_DE_DESCARGA.xlsx"  # ⚠️ CAMBIA ESTO
 
-        response = requests.get(url)
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
+
+        response = requests.get(url, headers=headers)
+
+        if response.status_code != 200:
+            st.error(f"Error HTTP: {response.status_code}")
+            return pd.DataFrame()
+
         file = BytesIO(response.content)
 
-        df = pd.read_excel(file)
+        df = pd.read_excel(file, engine="openpyxl")
 
         return df
 
     except Exception as e:
-        st.error("Error cargando datos")
+        st.error(f"❌ Error cargando datos: {e}")
         return pd.DataFrame()
 
 df = load_data()
 
 # ==============================
-# LIMPIEZA CORRECTA Y ROBUSTA
+# VALIDAR DATA
 # ==============================
 
-# ✅ convertir nombres de columnas a string limpio
+if df.empty:
+    st.error("❌ No se pudo cargar el Excel o está vacío")
+    st.stop()
+
+# ==============================
+# LIMPIEZA ROBUSTA
+# ==============================
+
+# limpiar nombres
 df.columns = [str(col).strip() for col in df.columns]
 
-# ✅ eliminar columnas basura tipo "Unnamed"
+# eliminar columnas basura
 df = df.loc[:, ~pd.Series(df.columns).str.contains("Unnamed", case=False)]
 
-# ✅ DEBUG (opcional, puedes quitar después)
+# DEBUG
 st.write("Columnas detectadas:", df.columns)
 
 # ==============================
-# DETECTAR COLUMNA DE VENTAS
+# DETECTAR VENTAS
 # ==============================
 
 col_ventas = None
-
 for col in df.columns:
     if "VENTA" in col.upper():
         col_ventas = col
         break
 
 if col_ventas is None:
-    st.error("❌ No se encontró columna de ventas en el Excel")
+    st.error("❌ No se encontró columna de ventas")
     st.stop()
 
-# ✅ crear columna estándar
 df["Ventas"] = pd.to_numeric(df[col_ventas], errors="coerce")
 
 # ==============================
@@ -132,33 +142,31 @@ for col in df.columns:
 if col_vendedora:
     df["Vendedora"] = df[col_vendedora]
 
-# ==============================
-# LIMPIAR DATOS INVALIDOS
-# ==============================
-
+# limpiar datos
 df = df.dropna(subset=["Ventas"])
+
 # ==============================
 # FILTROS
 # ==============================
-st.sidebar.header("Filtros")
+st.sidebar.header("🔎 Filtros")
 
-if "Vendedora" in df:
-    vendedor = st.sidebar.selectbox(
+if "Vendedora" in df.columns:
+    seleccion = st.sidebar.selectbox(
         "Vendedora",
         ["Todas"] + list(df["Vendedora"].dropna().unique())
     )
 
-    if vendedor != "Todas":
-        df = df[df["Vendedora"] == vendedor]
+    if seleccion != "Todas":
+        df = df[df["Vendedora"] == seleccion]
 
 # ==============================
 # KPIs
 # ==============================
 col1, col2, col3 = st.columns(3)
 
-col1.metric("💰 Ventas Totales", round(df["Ventas"].sum(),2))
+col1.metric("💰 Ventas Totales", round(df["Ventas"].sum(), 2))
 col2.metric("📊 Registros", len(df))
-col3.metric("📈 Promedio", round(df["Ventas"].mean(),2))
+col3.metric("📈 Promedio", round(df["Ventas"].mean(), 2))
 
 # ==============================
 # GRAFICOS
@@ -166,20 +174,26 @@ col3.metric("📈 Promedio", round(df["Ventas"].mean(),2))
 
 st.subheader("📈 Ventas por Fecha")
 
-df_fecha = df.groupby("Fecha")["Ventas"].sum()
+if "Fecha" in df.columns:
+    df_group = df.groupby("Fecha")["Ventas"].sum()
+    st.line_chart(df_group)
+else:
+    st.warning("No hay campo de fecha")
 
-st.line_chart(df_fecha)
+st.subheader("📊 Ventas por Vendedora")
+
+if "Vendedora" in df.columns:
+    df_vend = df.groupby("Vendedora")["Ventas"].sum()
+    st.bar_chart(df_vend)
 
 # ==============================
 # TABLA
 # ==============================
 st.subheader("📋 Datos")
-
 st.dataframe(df)
 
 # ==============================
 # AUTO REFRESH
 # ==============================
-import time
 time.sleep(30)
 st.rerun()
